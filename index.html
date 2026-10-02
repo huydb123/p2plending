@@ -758,13 +758,17 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block font-medium text-slate-300 mb-1">Credit Score Range</label>
-                        <select id="borrower-form-credit" onchange="calculateBorrowQuote()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+                        <label class="block font-medium text-slate-300 mb-1 flex items-center justify-between">
+                            <span>Verified Credit Score Tier</span>
+                            <span class="text-[10px] text-emerald-400 font-normal"><i class="fa-solid fa-shield-check"></i> Telemetry Locked</span>
+                        </label>
+                        <select id="borrower-form-credit" disabled onchange="calculateBorrowQuote()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-slate-300 cursor-not-allowed font-semibold">
                             <option value="760">760+ (Grade A1 - Excellent)</option>
-                            <option value="720" selected>720 - 759 (Grade A2 - Very Good)</option>
+                            <option value="720">720 - 759 (Grade A2 - Very Good)</option>
                             <option value="680">680 - 719 (Grade B1 - Good)</option>
                             <option value="640">640 - 679 (Grade C1 - Average)</option>
-                            <option value="600">600 - 639 (Grade D1 - Higher Risk)</option>
+                            <option value="600">600 - 639 (Grade D1 - High Risk)</option>
+                            <option value="550">Below 600 (Grade E1 - Subprime / High Risk)</option>
                         </select>
                     </div>
                 </div>
