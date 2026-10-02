@@ -50,7 +50,8 @@ module.exports = async (req, res) => {
             else if (creditScore >= 720) { grade = 'A2'; apr = 10.5; }
             else if (creditScore >= 680) { grade = 'B1'; apr = 13.0; }
             else if (creditScore >= 640) { grade = 'C1'; apr = 16.5; }
-            else { grade = 'D1'; apr = 19.8; }
+            else if (creditScore >= 600) { grade = 'D1'; apr = 19.8; }
+            else { grade = 'E1'; apr = 24.5; }
 
             const loanId = `LN-${Math.floor(1000 + Math.random() * 9000)}`;
 
