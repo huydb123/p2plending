@@ -337,6 +337,7 @@ function selectPreseededUser(role) {
         document.getElementById('user-role-badge').innerText = 'Verified Borrower';
         document.getElementById('user-role-badge').className = 'text-[10px] text-indigo-400';
 
+        saveStateToLocalStorage();
         closeModal('register-modal');
         switchTab('borrower-portal');
         showToast(`Switched active persona to Borrower: ${borrower.name}`, 'info');
@@ -354,6 +355,7 @@ function selectPreseededUser(role) {
         document.getElementById('user-role-badge').innerText = 'Lender & Investor';
         document.getElementById('user-role-badge').className = 'text-[10px] text-brand-400';
 
+        saveStateToLocalStorage();
         updateWalletDisplay();
         closeModal('register-modal');
         switchTab('marketplace');
@@ -772,7 +774,24 @@ function handleBorrowSubmit(e) {
     showToast(`Loan application (${newLoan.id}) submitted & saved!`, 'success');
 }
 
-function openBorrowModal() { document.getElementById('borrow-modal').classList.remove('hidden'); }
+function openBorrowModal() {
+    const activeBorrower = state.borrowers.find(b => b.id === state.activeUserId);
+    if (activeBorrower) {
+        const nameInput = document.getElementById('borrower-form-name');
+        const creditSelect = document.getElementById('borrower-form-credit');
+        if (nameInput) nameInput.value = activeBorrower.name;
+        if (creditSelect && activeBorrower.creditScore) {
+            const score = parseInt(activeBorrower.creditScore);
+            if (score >= 760) creditSelect.value = '760';
+            else if (score >= 720) creditSelect.value = '720';
+            else if (score >= 680) creditSelect.value = '680';
+            else if (score >= 640) creditSelect.value = '640';
+            else creditSelect.value = '600';
+        }
+    }
+    calculateBorrowQuote();
+    document.getElementById('borrow-modal').classList.remove('hidden');
+}
 
 function renderLenderInvestmentsTable() {
     const tbody = document.getElementById('lender-investments-tbody');
