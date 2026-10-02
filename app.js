@@ -711,7 +711,8 @@ function calculateBorrowQuote() {
     else if (creditScore >= 720) apr = 10.5;
     else if (creditScore >= 680) apr = 13.0;
     else if (creditScore >= 640) apr = 16.5;
-    else apr = 19.8;
+    else if (creditScore >= 600) apr = 19.8;
+    else apr = 24.5;
 
     const monthlyRate = (apr / 100) / 12;
     const emi = (amount * monthlyRate * Math.pow(1 + monthlyRate, term)) / (Math.pow(1 + monthlyRate, term) - 1);
@@ -734,7 +735,8 @@ function handleBorrowSubmit(e) {
     else if (creditScore >= 720) { grade = 'A2'; apr = 10.5; }
     else if (creditScore >= 680) { grade = 'B1'; apr = 13.0; }
     else if (creditScore >= 640) { grade = 'C1'; apr = 16.5; }
-    else { grade = 'D1'; apr = 19.8; }
+    else if (creditScore >= 600) { grade = 'D1'; apr = 19.8; }
+    else { grade = 'E1'; apr = 24.5; }
 
     const newLoan = {
         id: `LN-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -786,7 +788,8 @@ function openBorrowModal() {
             else if (score >= 720) creditSelect.value = '720';
             else if (score >= 680) creditSelect.value = '680';
             else if (score >= 640) creditSelect.value = '640';
-            else creditSelect.value = '600';
+            else if (score >= 600) creditSelect.value = '600';
+            else creditSelect.value = '550';
         }
     }
     calculateBorrowQuote();
