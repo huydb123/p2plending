@@ -617,21 +617,23 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block font-medium text-slate-300 mb-1">Primary Role</label>
-                        <select id="reg-form-role" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
-                            <option value="borrower">Borrower (Request Loans)</option>
+                        <label class="block font-medium text-slate-300 mb-1">Primary Account Role</label>
+                        <select id="reg-form-role" onchange="toggleRegRoleFields()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-semibold">
+                            <option value="borrower" selected>Borrower (Request Capital)</option>
                             <option value="lender">Lender (Invest & Earn Yield)</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="block font-medium text-slate-300 mb-1">Starting Credit Score</label>
-                        <input type="number" id="reg-form-credit" value="720" min="550" max="850" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold">
+                    <div id="container-reg-credit">
+                        <label class="block font-medium text-slate-300 mb-1">Verified Credit Score</label>
+                        <input type="number" id="reg-form-credit" value="720" min="300" max="850" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold">
+                        <p class="text-[10px] text-slate-400 mt-1">Used for AI risk grading & APR determination.</p>
                     </div>
-                    <div>
-                        <label class="block font-medium text-slate-300 mb-1">Initial Wallet Deposit ($)</label>
+                    <div id="container-reg-wallet" class="hidden">
+                        <label class="block font-medium text-slate-300 mb-1">Initial Escrow Deposit ($)</label>
                         <input type="number" id="reg-form-wallet" value="5000" min="100" step="500" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold">
+                        <p class="text-[10px] text-slate-400 mt-1">Capital used to purchase loan notes on the marketplace.</p>
                     </div>
                 </div>
 

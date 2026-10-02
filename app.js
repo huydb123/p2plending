@@ -237,7 +237,9 @@ function saveStateToLocalStorage() {
             customLoans: state.loans.filter(l => !['LN-9042','LN-8812','LN-7734','LN-6541','LN-5120','LN-4099'].includes(l.id)),
             activeUserRole: state.activeUserRole,
             activeUserId: state.activeUserId,
-            walletBalance: state.walletBalance
+            walletBalance: state.walletBalance,
+            activeBorrowerSchedule: state.activeBorrowerSchedule,
+            secondaryNotes: state.secondaryNotes
         };
         localStorage.setItem('lendpulse_app_state', JSON.stringify(customData));
     } catch (err) {
@@ -273,6 +275,14 @@ function loadStateFromLocalStorage() {
                     state.loans.unshift(l);
                 }
             });
+        }
+
+        if (parsed.activeBorrowerSchedule && Array.isArray(parsed.activeBorrowerSchedule)) {
+            state.activeBorrowerSchedule = parsed.activeBorrowerSchedule;
+        }
+
+        if (parsed.secondaryNotes && Array.isArray(parsed.secondaryNotes)) {
+            state.secondaryNotes = parsed.secondaryNotes;
         }
 
         if (parsed.activeUserId) {
@@ -363,14 +373,28 @@ function selectPreseededUser(role) {
     }
 }
 
+function toggleRegRoleFields() {
+    const role = document.getElementById('reg-form-role')?.value || 'borrower';
+    const creditContainer = document.getElementById('container-reg-credit');
+    const walletContainer = document.getElementById('container-reg-wallet');
+
+    if (role === 'borrower') {
+        if (creditContainer) creditContainer.classList.remove('hidden');
+        if (walletContainer) walletContainer.classList.add('hidden');
+    } else {
+        if (creditContainer) creditContainer.classList.add('hidden');
+        if (walletContainer) walletContainer.classList.remove('hidden');
+    }
+}
+
 // Handle New User Registration Form
 function handleNewUserRegistration(e) {
     e.preventDefault();
     const name = document.getElementById('reg-form-name').value;
     const email = document.getElementById('reg-form-email').value;
     const role = document.getElementById('reg-form-role').value;
-    const credit = parseInt(document.getElementById('reg-form-credit').value) || 720;
-    const wallet = parseFloat(document.getElementById('reg-form-wallet').value) || 5000;
+    const credit = role === 'borrower' ? (parseInt(document.getElementById('reg-form-credit').value) || 720) : null;
+    const wallet = role === 'lender' ? (parseFloat(document.getElementById('reg-form-wallet').value) || 5000) : 0.00;
 
     const newId = `usr_${role === 'borrower' ? 'b' : 'l'}${Math.floor(100 + Math.random() * 900)}`;
     const avatar = `https://images.unsplash.com/photo-${role === 'borrower' ? '1534528741775-53994a69daeb' : '1535713875002-d1d0cf377fde'}?auto=format&fit=crop&w=120&q=80`;
@@ -378,6 +402,7 @@ function handleNewUserRegistration(e) {
     if (role === 'borrower') {
         state.borrowers.unshift({ id: newId, name, creditScore: credit, income: '$8,500/mo', dti: '25%', avatar });
         state.activeUserRole = 'borrower';
+        state.walletBalance = 0.00; // Borrowers start with $0.00 balance
     } else {
         state.lenders.unshift({ id: newId, name, balance: wallet, avatar });
         state.activeUserRole = 'lender';
@@ -400,7 +425,7 @@ function handleNewUserRegistration(e) {
         fetch('/api/users', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fullName: name, email, role, creditScore: credit, initialDeposit: wallet })
+            body: JSON.stringify({ fullName: name, email, role, creditScore: credit || 720, initialDeposit: wallet })
         }).catch(err => console.log('API sync notice:', err));
     } catch (ignore) {}
 
@@ -858,7 +883,8 @@ function payBorrowerEMI() {
     }
 
     if (state.walletBalance < dueItem.total) {
-        showToast('Insufficient wallet balance to process EMI payment.', 'error');
+        showToast(`Wallet balance ($${state.walletBalance.toFixed(2)}) is insufficient for $${dueItem.total.toFixed(2)} EMI. Opening Deposit Escrow modal...`, 'error');
+        openWalletModal();
         return;
     }
 
@@ -867,6 +893,7 @@ function payBorrowerEMI() {
     const nextUpcoming = state.activeBorrowerSchedule.find(i => i.status === 'UPCOMING');
     if (nextUpcoming) nextUpcoming.status = 'DUE NOW';
 
+    saveStateToLocalStorage();
     updateWalletDisplay();
     renderBorrowerSchedule();
     showToast(`EMI Payment of $${dueItem.total.toFixed(2)} processed! Yield distributed via Supabase Escrow.`, 'success');
