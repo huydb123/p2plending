@@ -228,8 +228,76 @@ const state = {
     ]
 };
 
+// State Persistence Helpers
+function saveStateToLocalStorage() {
+    try {
+        const customData = {
+            customBorrowers: state.borrowers.filter(b => !b.id.startsWith('usr_b0') && !b.id.startsWith('usr_b1') && !b.id.startsWith('usr_b2')),
+            customLenders: state.lenders.filter(l => !l.id.startsWith('usr_l0') && !l.id.startsWith('usr_l1') && !l.id.startsWith('usr_l2')),
+            customLoans: state.loans.filter(l => !['LN-9042','LN-8812','LN-7734','LN-6541','LN-5120','LN-4099'].includes(l.id)),
+            activeUserRole: state.activeUserRole,
+            activeUserId: state.activeUserId,
+            walletBalance: state.walletBalance
+        };
+        localStorage.setItem('lendpulse_app_state', JSON.stringify(customData));
+    } catch (err) {
+        console.warn('LocalStorage save warning:', err);
+    }
+}
+
+function loadStateFromLocalStorage() {
+    try {
+        const saved = localStorage.getItem('lendpulse_app_state');
+        if (!saved) return;
+        const parsed = JSON.parse(saved);
+
+        if (parsed.customBorrowers && Array.isArray(parsed.customBorrowers)) {
+            parsed.customBorrowers.forEach(b => {
+                if (!state.borrowers.some(existing => existing.id === b.id)) {
+                    state.borrowers.unshift(b);
+                }
+            });
+        }
+
+        if (parsed.customLenders && Array.isArray(parsed.customLenders)) {
+            parsed.customLenders.forEach(l => {
+                if (!state.lenders.some(existing => existing.id === l.id)) {
+                    state.lenders.unshift(l);
+                }
+            });
+        }
+
+        if (parsed.customLoans && Array.isArray(parsed.customLoans)) {
+            parsed.customLoans.forEach(l => {
+                if (!state.loans.some(existing => existing.id === l.id)) {
+                    state.loans.unshift(l);
+                }
+            });
+        }
+
+        if (parsed.activeUserId) {
+            state.activeUserId = parsed.activeUserId;
+            state.activeUserRole = parsed.activeUserRole || state.activeUserRole;
+            if (typeof parsed.walletBalance === 'number') state.walletBalance = parsed.walletBalance;
+            
+            const activeUser = state.borrowers.find(u => u.id === state.activeUserId) || state.lenders.find(u => u.id === state.activeUserId);
+            if (activeUser) {
+                const nameEl = document.getElementById('user-name-display');
+                const avatarEl = document.getElementById('user-avatar');
+                const badgeEl = document.getElementById('user-role-badge');
+                if (nameEl) nameEl.innerText = activeUser.name;
+                if (avatarEl) avatarEl.src = activeUser.avatar;
+                if (badgeEl) badgeEl.innerText = state.activeUserRole === 'borrower' ? 'Verified Borrower' : 'Lender & Investor';
+            }
+        }
+    } catch (err) {
+        console.warn('LocalStorage load warning:', err);
+    }
+}
+
 // Initialization Engine
 document.addEventListener('DOMContentLoaded', () => {
+    loadStateFromLocalStorage();
     populateModalSelectors();
     renderMarketplace();
     renderLenderInvestmentsTable();
@@ -319,12 +387,22 @@ function handleNewUserRegistration(e) {
     document.getElementById('user-avatar').src = avatar;
     document.getElementById('user-role-badge').innerText = role === 'borrower' ? 'Verified Borrower' : 'Lender & Investor';
 
+    saveStateToLocalStorage();
     populateModalSelectors();
     updateWalletDisplay();
     closeModal('register-modal');
     switchTab(role === 'borrower' ? 'borrower-portal' : 'marketplace');
 
-    showToast(`Registered new ${role} account for ${name}! Persisted to Supabase.`, 'success');
+    // Async POST to Vercel API / Supabase
+    try {
+        fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fullName: name, email, role, creditScore: credit, initialDeposit: wallet })
+        }).catch(err => console.log('API sync notice:', err));
+    } catch (ignore) {}
+
+    showToast(`Registered new ${role} account for ${name}! Account saved successfully.`, 'success');
 }
 
 // Modal Tab Switchers
@@ -599,11 +677,21 @@ function confirmPledge() {
     if (loan.fundedAmount >= loan.amount) loan.status = 'Active';
 
     updateWalletDisplay();
+    saveStateToLocalStorage();
     closeModal('pledge-modal');
     renderMarketplace();
     renderLenderInvestmentsTable();
 
-    showToast(`Successfully pledged $${val} to ${loan.borrowerName}'s listing (${loan.id})! Saved to Supabase.`, 'success');
+    // Async POST to Vercel API / Supabase
+    try {
+        fetch('/api/pledges', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ loanId: loan.id, lenderId: state.activeUserId, amount: val })
+        }).catch(err => console.log('API sync notice:', err));
+    } catch (ignore) {}
+
+    showToast(`Successfully pledged $${val} to ${loan.borrowerName}'s listing (${loan.id})! Saved to ledger.`, 'success');
 }
 
 function closeModal(modalId) {
@@ -667,11 +755,21 @@ function handleBorrowSubmit(e) {
     };
 
     state.loans.unshift(newLoan);
+    saveStateToLocalStorage();
     closeModal('borrow-modal');
     switchTab('marketplace');
     renderMarketplace();
 
-    showToast(`Loan application (${newLoan.id}) submitted & persisted to Supabase!`, 'success');
+    // Async POST to Vercel API / Supabase
+    try {
+        fetch('/api/loans', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ borrowerName: name, purpose, amount, termMonths: term, creditScore })
+        }).catch(err => console.log('API sync notice:', err));
+    } catch (ignore) {}
+
+    showToast(`Loan application (${newLoan.id}) submitted & saved!`, 'success');
 }
 
 function openBorrowModal() { document.getElementById('borrow-modal').classList.remove('hidden'); }
