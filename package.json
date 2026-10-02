@@ -1,0 +1,25 @@
+{
+  "name": "lendpulse-p2p-platform",
+  "version": "2.4.0",
+  "description": "Next-Gen Peer-to-Peer Lending & Investment Marketplace with Supabase Backend & Vercel Deployment",
+  "main": "app.js",
+  "scripts": {
+    "start": "python3 -m http.server 3000",
+    "dev": "python3 -m http.server 3000",
+    "seed": "node scripts/seed.js",
+    "build": "echo 'Build step complete for Vercel deployment'"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "dotenv": "^16.4.5"
+  },
+  "keywords": [
+    "p2p-lending",
+    "p2p-marketplace",
+    "supabase",
+    "vercel",
+    "fintech"
+  ],
+  "author": "Antigravity Engineering",
+  "license": "MIT"
+}

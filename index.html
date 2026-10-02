@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LendPulse | Next-Gen P2P Lending & Investment Marketplace</title>
+    <meta name="description" content="AI-assisted P2P Lending Platform connecting verified borrowers with individual and institutional lenders with Supabase backend and Vercel deployment support.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        },
+                        darkBg: '#0b0f19',
+                        cardBg: '#111827',
+                        cardBorder: '#1f2937'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS Client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-darkBg text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Top Navigation Bar -->
+    <header class="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/80 transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Brand Logo -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('marketplace')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-brand-500/20">
+                    <i class="fa-solid fa-chart-line text-white text-xl"></i>
+                </div>
+                <div>
+                    <span class="font-display font-bold text-xl tracking-tight text-white flex items-center gap-1.5">
+                        Lend<span class="text-brand-500">Pulse</span>
+                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Supabase + Vercel</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Main Navigation Links -->
+            <nav class="hidden md:flex items-center space-x-1">
+                <button onclick="switchTab('marketplace')" id="nav-marketplace" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 text-white bg-slate-800 border border-slate-700">
+                    <i class="fa-solid fa-store text-brand-400"></i> Marketplace
+                </button>
+                <button onclick="switchTab('lender-dashboard')" id="nav-lender-dashboard" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800/50">
+                    <i class="fa-solid fa-chart-pie"></i> Lender Portfolio
+                </button>
+                <button onclick="switchTab('borrower-portal')" id="nav-borrower-portal" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800/50">
+                    <i class="fa-solid fa-hand-holding-dollar"></i> Borrower Hub
+                </button>
+                <button onclick="switchTab('secondary-market')" id="nav-secondary-market" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800/50">
+                    <i class="fa-solid fa-arrows-rotate"></i> Secondary Market
+                </button>
+                <button onclick="switchTab('architecture-gap')" id="nav-architecture-gap" class="nav-btn px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 text-amber-400 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20">
+                    <i class="fa-solid fa-database"></i> Backend Audit
+                </button>
+            </nav>
+
+            <!-- User Controls & Registration -->
+            <div class="flex items-center space-x-3">
+                <!-- Digital Wallet Quick Access -->
+                <div class="hidden sm:flex items-center bg-slate-950/60 border border-slate-800 rounded-xl px-3 py-1.5 text-xs">
+                    <div class="flex flex-col mr-2.5">
+                        <span class="text-slate-400 text-[10px] uppercase font-semibold">Wallet</span>
+                        <span id="header-wallet-balance" class="font-bold text-emerald-400 text-xs">$12,450.00</span>
+                    </div>
+                    <button onclick="openWalletModal()" class="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 p-1.5 rounded-lg border border-emerald-500/30 transition-all">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                    </button>
+                </div>
+
+                <!-- Account Switcher & Register Button -->
+                <button onclick="openRegisterModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium text-xs px-3 py-2 rounded-xl transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-user-plus text-brand-400"></i> Register / Switch Profile
+                </button>
+
+                <!-- Role Active Indicator -->
+                <div class="relative">
+                    <button onclick="toggleRoleMenu()" class="flex items-center space-x-2 bg-slate-800 hover:bg-slate-750 border border-slate-700/80 rounded-xl px-3 py-1.5 text-xs text-slate-200 transition-all">
+                        <img id="user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" class="w-6 h-6 rounded-full object-cover border border-brand-500" alt="Avatar">
+                        <div class="text-left hidden sm:block">
+                            <p id="user-name-display" class="font-semibold leading-tight text-white">Elena Rostova</p>
+                            <p id="user-role-badge" class="text-[10px] text-brand-400">Lender & Investor</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 ml-1"></i>
+                    </button>
+                    <!-- Role Dropdown -->
+                    <div id="role-dropdown" class="hidden absolute right-0 mt-2 w-64 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-2 z-50">
+                        <div class="px-3 py-1.5 border-b border-slate-800">
+                            <p class="text-[11px] font-semibold text-slate-400 uppercase">Select Active Persona</p>
+                        </div>
+                        <button onclick="switchUserRole('lender')" class="w-full text-left px-3 py-2 text-xs hover:bg-slate-800 flex items-center gap-2 text-slate-200">
+                            <i class="fa-solid fa-wallet text-emerald-400 w-4"></i>
+                            <div>
+                                <p class="font-medium">Lender Mode (Brian K.)</p>
+                                <p class="text-[10px] text-slate-400">Micro-pledge notes & earn yield</p>
+                            </div>
+                        </button>
+                        <button onclick="switchUserRole('borrower')" class="w-full text-left px-3 py-2 text-xs hover:bg-slate-800 flex items-center gap-2 text-slate-200">
+                            <i class="fa-solid fa-user-graduate text-indigo-400 w-4"></i>
+                            <div>
+                                <p class="font-medium">Borrower Mode (Elena Rostova)</p>
+                                <p class="text-[10px] text-slate-400">Apply for loans & pay monthly EMI</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Action Button: Apply for Loan -->
+                <button onclick="openBorrowModal()" class="bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-medium text-xs px-3 py-2 rounded-xl shadow-lg shadow-brand-500/25 transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Request Loan</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- App Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- TAB 1: P2P MARKETPLACE (EXPLORE LOANS) -->
+        <section id="tab-marketplace" class="space-y-6">
+            <!-- Hero Banner / KPI Summary -->
+            <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950/60 to-slate-900 border border-slate-800 p-6 md:p-8 shadow-2xl">
+                <div class="absolute -top-24 -right-24 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div class="max-w-2xl space-y-2">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            Live Order Book Connected to Supabase
+                        </div>
+                        <h1 class="font-display text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+                            Invest in Fractional P2P Loans with <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-emerald-400">Database Persistence</span>
+                        </h1>
+                        <p class="text-sm text-slate-300">
+                            Select from <span class="text-white font-semibold">20 Verified Borrowers</span> and <span class="text-white font-semibold">20 Active Lenders</span>. Micro-pledge notes starting from <span class="text-emerald-400 font-semibold">$25</span> per loan note with Supabase database backing and Vercel serverless deployment.
+                        </p>
+                    </div>
+
+                    <!-- Market Quick Metrics -->
+                    <div class="grid grid-cols-3 gap-3 bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 min-w-[280px]">
+                        <div class="text-center">
+                            <p class="text-[11px] text-slate-400 uppercase font-medium">Avg Net APY</p>
+                            <p class="text-lg font-extrabold text-emerald-400">11.45%</p>
+                        </div>
+                        <div class="text-center border-x border-slate-800">
+                            <p class="text-[11px] text-slate-400 uppercase font-medium">Active Borrowers</p>
+                            <p class="text-lg font-extrabold text-indigo-300">20</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-[11px] text-slate-400 uppercase font-medium">Active Lenders</p>
+                            <p class="text-lg font-extrabold text-white">20</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters & Controls Bar -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <!-- Search Input -->
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                        <input type="text" id="search-input" onkeyup="filterLoans()" placeholder="Search by borrower name, loan purpose (Tech, Medical, Equipment)..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-brand-500 transition-all">
+                    </div>
+
+                    <!-- Quick Filter Badges -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-xs text-slate-400 font-medium mr-1">Credit Risk Grade:</span>
+                        <button onclick="setGradeFilter('ALL')" id="grade-btn-ALL" class="grade-filter-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-brand-600 text-white border border-brand-500 transition-all">All</button>
+                        <button onclick="setGradeFilter('A')" id="grade-btn-A" class="grade-filter-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-emerald-400 border border-slate-700 hover:bg-slate-750">Grade A (9.5 - 11.5%)</button>
+                        <button onclick="setGradeFilter('B')" id="grade-btn-B" class="grade-filter-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-indigo-400 border border-slate-700 hover:bg-slate-750">Grade B (12 - 14.5%)</button>
+                        <button onclick="setGradeFilter('C')" id="grade-btn-C" class="grade-filter-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-amber-400 border border-slate-700 hover:bg-slate-750">Grade C (15 - 17%)</button>
+                        <button onclick="setGradeFilter('D')" id="grade-btn-D" class="grade-filter-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-rose-400 border border-slate-700 hover:bg-slate-750">Grade D (18%+ High Yield)</button>
+                    </div>
+                </div>
+
+                <!-- Secondary Filter Row -->
+                <div class="flex flex-wrap items-center justify-between pt-3 border-t border-slate-800/60 text-xs text-slate-400">
+                    <div class="flex items-center gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="filter-verified-only" onchange="filterLoans()" class="rounded bg-slate-950 border-slate-800 text-brand-600 focus:ring-brand-500">
+                            <span>KYC & Income Verified Only</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="filter-near-funded" onchange="filterLoans()" class="rounded bg-slate-950 border-slate-800 text-brand-600 focus:ring-brand-500">
+                            <span>Almost Funded (&gt; 75%)</span>
+                        </label>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span>Sort By:</span>
+                        <select id="sort-select" onchange="filterLoans()" class="bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none">
+                            <option value="funding-desc">Highest Funding Progress</option>
+                            <option value="rate-desc">Highest Interest Rate (APR)</option>
+                            <option value="amount-desc">Largest Loan Amount</option>
+                            <option value="credit-desc">Best Credit Score</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loan Listing Cards Grid -->
+            <div id="loans-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Loan cards will be dynamically rendered -->
+            </div>
+        </section>
+
+        <!-- TAB 2: LENDER PORTFOLIO & DASHBOARD -->
+        <section id="tab-lender-dashboard" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold font-display text-white">Investor Portfolio & Yield Analytics</h2>
+                    <p class="text-xs text-slate-400">Track active micro-pledges across 20 lenders, cash flow repayments, and auto-invest bot rules.</p>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button onclick="openAutoInvestModal()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold px-3.5 py-2 rounded-xl text-slate-200 transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-robot text-brand-400"></i> Configure Auto-Invest Bot
+                    </button>
+                    <button onclick="exportPortfolioCSV()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold px-3.5 py-2 rounded-xl text-slate-200 transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-download"></i> Export Tax Statement
+                    </button>
+                </div>
+            </div>
+
+            <!-- Portfolio Metric Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-medium text-slate-400">Total Invested Principal</span>
+                        <div class="w-8 h-8 rounded-lg bg-brand-500/10 text-brand-400 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-vault"></i>
+                        </div>
+                    </div>
+                    <p id="lender-total-invested" class="text-2xl font-bold text-white mt-2">$8,750.00</p>
+                    <div class="flex items-center gap-1 text-[11px] text-emerald-400 mt-1">
+                        <i class="fa-solid fa-arrow-trend-up"></i> Active across 24 loan notes
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-medium text-slate-400">Net Annualized Return (NAR)</span>
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-percent"></i>
+                        </div>
+                    </div>
+                    <p id="lender-nar" class="text-2xl font-bold text-emerald-400 mt-2">12.18%</p>
+                    <p class="text-[11px] text-slate-400 mt-1">Net of platform servicing fee (0.95%)</p>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-medium text-slate-400">Monthly Expected Cash Flow</span>
+                        <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-calendar-check"></i>
+                        </div>
+                    </div>
+                    <p id="lender-monthly-flow" class="text-2xl font-bold text-white mt-2">$412.30</p>
+                    <p class="text-[11px] text-slate-400 mt-1">Next payout on Oct 15 ($142.10)</p>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-medium text-slate-400">Portfolio Diversification</span>
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-pie-chart"></i>
+                        </div>
+                    </div>
+                    <p class="text-2xl font-bold text-white mt-2">Optimal</p>
+                    <p class="text-[11px] text-slate-400 mt-1">Max exposure per borrower: 4.2%</p>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Portfolio Allocation Breakdown -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl lg:col-span-2">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-display font-semibold text-white text-base">Monthly Interest Received & Projection</h3>
+                        <span class="text-xs text-slate-400">Past 6 Months + 3 Month Forecast</span>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="returnsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Risk Tier Allocation -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                    <h3 class="font-display font-semibold text-white text-base mb-4">Risk Grade Allocation</h3>
+                    <div class="h-52 relative flex items-center justify-center">
+                        <canvas id="riskPieChart"></canvas>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mt-4 text-xs text-slate-300 border-t border-slate-800 pt-3">
+                        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> Grade A: 45%</div>
+                        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span> Grade B: 30%</div>
+                        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Grade C: 15%</div>
+                        <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span> Grade D: 10%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- My Active Pledged Notes Table -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-display font-semibold text-white text-base">My Active Funded Loan Notes</h3>
+                    <span class="text-xs text-slate-400">Showing active lender pledges</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">Borrower / Purpose</th>
+                                <th class="p-3">Grade</th>
+                                <th class="p-3">Pledged Note</th>
+                                <th class="p-3">APR</th>
+                                <th class="p-3">Maturity</th>
+                                <th class="p-3">Paid Off</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lender-investments-tbody" class="divide-y divide-slate-800/60">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: BORROWER HUB & REPAYMENT PORTAL -->
+        <section id="tab-borrower-portal" class="hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">Borrower Credit Telemetry</span>
+                            <span class="text-xs text-slate-400">SSN / Bank Verified</span>
+                        </div>
+                        <h2 class="text-2xl font-bold font-display text-white">Active Loan & Credit Score Overview</h2>
+                        <p class="text-xs text-slate-300 max-w-xl">
+                            Select any of the <span class="text-white font-bold">20 Borrower Profiles</span> in the database to test EMI payment servicing and credit score analytics.
+                        </p>
+                    </div>
+
+                    <!-- Borrower Credit Rating Box -->
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center gap-6">
+                        <div class="text-center">
+                            <p class="text-[10px] text-slate-400 uppercase font-semibold">Platform Score</p>
+                            <p class="text-3xl font-extrabold text-brand-400">742</p>
+                            <span class="text-[10px] text-emerald-400">Tier A1 (Very Good)</span>
+                        </div>
+                        <div class="border-l border-slate-800 pl-6 space-y-1 text-xs">
+                            <p><span class="text-slate-400">On-Time Payment History:</span> <strong class="text-emerald-400">100%</strong></p>
+                            <p><span class="text-slate-400">Platform Debt-to-Income:</span> <strong class="text-white">22%</strong></p>
+                            <p><span class="text-slate-400">Verified Monthly Income:</span> <strong class="text-white">$8,500.00</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Borrower Loan Details & EMI Schedule -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Loan Status & Next EMI Card -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-display font-semibold text-white text-base">Active Loan #LN-9042</h3>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">ACTIVE - 100% FUNDED</span>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-slate-950 border border-slate-800/80 space-y-3">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Loan Purpose:</span>
+                            <span class="font-semibold text-white">Tech Startup Capital expansion</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Total Borrowed Principal:</span>
+                            <span class="font-semibold text-white">$15,000.00</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Interest APR:</span>
+                            <span class="font-semibold text-emerald-400">10.5% (Grade A2)</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Remaining Balance:</span>
+                            <span class="font-semibold text-white">$11,250.00</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400">Maturity:</span>
+                            <span class="font-semibold text-slate-300">24 Months (18 payments left)</span>
+                        </div>
+                    </div>
+
+                    <!-- Next Payment CTA -->
+                    <div class="p-4 rounded-xl bg-gradient-to-r from-brand-900/40 to-indigo-900/40 border border-brand-500/30 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-[11px] text-brand-300 font-medium">Next Monthly EMI Due</p>
+                                <p class="text-xl font-extrabold text-white">$695.80</p>
+                            </div>
+                            <span class="text-xs bg-brand-500/20 text-brand-300 px-2.5 py-1 rounded-lg border border-brand-500/30">Due Oct 15, 2026</span>
+                        </div>
+                        <button onclick="payBorrowerEMI()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-credit-card"></i> Pay $695.80 EMI Now (Auto-Escrow)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Amortization Schedule Table -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl lg:col-span-2 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-display font-semibold text-white text-base">Loan Amortization & Repayment Ledger</h3>
+                        <span class="text-xs text-slate-400">Automated yield distribution to peer lenders</span>
+                    </div>
+
+                    <div class="overflow-x-auto max-h-72 overflow-y-auto border border-slate-800 rounded-xl">
+                        <table class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] sticky top-0 border-b border-slate-800">
+                                <tr>
+                                    <th class="p-3">Inst #</th>
+                                    <th class="p-3">Due Date</th>
+                                    <th class="p-3">Total Payment</th>
+                                    <th class="p-3">Principal</th>
+                                    <th class="p-3">Interest</th>
+                                    <th class="p-3">Remaining Balance</th>
+                                    <th class="p-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="borrower-schedule-tbody" class="divide-y divide-slate-800/60">
+                                <!-- Rendered dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: SECONDARY MARKET (LOAN LIQUIDITY) -->
+        <section id="tab-secondary-market" class="hidden space-y-6">
+            <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950/60 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div class="space-y-2">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 text-brand-400 text-xs font-semibold border border-brand-500/30">
+                            <i class="fa-solid fa-arrows-rotate"></i> P2P Loan Note Secondary Trading
+                        </div>
+                        <h2 class="text-2xl font-bold font-display text-white">Buy & Sell Existing Funded Loan Notes</h2>
+                        <p class="text-xs text-slate-300 max-w-2xl">
+                            Need early liquidity before a loan matures? Lenders can list their active micro-investment notes for sale with a discount or premium.
+                        </p>
+                    </div>
+
+                    <button onclick="openSellNoteModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs px-4 py-2.5 rounded-xl shadow-lg transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-tag"></i> List Note for Sale
+                    </button>
+                </div>
+            </div>
+
+            <!-- Secondary Notes Grid -->
+            <div id="secondary-notes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamically populated -->
+            </div>
+        </section>
+
+        <!-- TAB 5: BACKEND AUDIT & DEPLOYMENT MATRIX -->
+        <section id="tab-architecture-gap" class="hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-server"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold font-display text-white">Supabase & Vercel Backend Architecture</h2>
+                            <p class="text-xs text-slate-400">Database schema, seed data, API security, and Vercel serverless deployment status.</p>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                        <i class="fa-solid fa-shield-halved mr-1"></i> Secrets Secured in .env.local
+                    </span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Left: Supabase & Seed Database -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+                    <h3 class="font-display font-semibold text-emerald-400 text-base flex items-center gap-2">
+                        <i class="fa-solid fa-database"></i> Database Seed Status (20 Borrowers & 20 Lenders)
+                    </h3>
+                    <div class="space-y-3 text-xs text-slate-300">
+                        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                            <div class="flex justify-between font-semibold text-white">
+                                <span>1. 20 Borrower Profiles</span>
+                                <span class="text-emerald-400">usr_b01 to usr_b20</span>
+                            </div>
+                            <p class="text-slate-400">Complete credit scores (600–790), verified income ($4.3k–$14k/mo), DTI ratios, and loan requests.</p>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                            <div class="flex justify-between font-semibold text-white">
+                                <span>2. 20 Lender Profiles</span>
+                                <span class="text-emerald-400">usr_l01 to usr_l20</span>
+                            </div>
+                            <p class="text-slate-400">Individual and institutional lenders with wallet balances up to $250,000.</p>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                            <div class="flex justify-between font-semibold text-white">
+                                <span>3. PostgreSQL Schema & RLS Policies</span>
+                                <span class="text-indigo-400">supabase/schema.sql</span>
+                            </div>
+                            <p class="text-slate-400">Tables for profiles, loans, pledges, secondary notes, and repayments with Row Level Security.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Vercel Deployment & Security -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+                    <h3 class="font-display font-semibold text-brand-400 text-base flex items-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Vercel Deployment & Secrets Security
+                    </h3>
+                    <div class="space-y-3 text-xs text-slate-300">
+                        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                            <span class="font-semibold text-white">A. Safe Credentials Management</span>
+                            <p class="text-slate-400">
+                                Credentials stored in <code class="text-brand-400 font-mono">.env.local</code> (git ignored). Zero hardcoded keys in public code.
+                            </p>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                            <span class="font-semibold text-white">B. Vercel Serverless Endpoints</span>
+                            <p class="text-slate-400">
+                                Serverless API handlers configured in <code class="text-brand-400 font-mono">/api/loans.js</code>, <code class="text-brand-400 font-mono">/api/pledges.js</code>, and <code class="text-brand-400 font-mono">/api/users.js</code>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL 1: REGISTER NEW USER / SELECT BORROWER & LENDER -->
+    <div id="register-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-2xl p-6 shadow-2xl space-y-5 relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal('register-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div>
+                <div class="flex items-center gap-2 text-xs font-semibold text-brand-400">
+                    <i class="fa-solid fa-user-check"></i> Account Registration & Selector
+                </div>
+                <h3 class="text-xl font-bold font-display text-white mt-1">Register or Select User Persona</h3>
+                <p class="text-xs text-slate-400">Register a new Borrower/Lender or choose from 20 pre-seeded sample users in the database.</p>
+            </div>
+
+            <!-- Tab Switcher inside Modal -->
+            <div class="flex border-b border-slate-800 text-xs font-semibold">
+                <button onclick="switchRegisterTab('sample')" id="reg-tab-sample" class="py-2.5 px-4 text-brand-400 border-b-2 border-brand-500">
+                    Select Sample Persona (20 Borrowers / 20 Lenders)
+                </button>
+                <button onclick="switchRegisterTab('new')" id="reg-tab-new" class="py-2.5 px-4 text-slate-400 hover:text-white">
+                    Register Brand New User
+                </button>
+            </div>
+
+            <!-- Section 1: Sample User Selector -->
+            <div id="reg-section-sample" class="space-y-4 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Select from 20 Pre-Seeded Borrowers:</label>
+                    <select id="select-borrower-dropdown" onchange="selectPreseededUser('borrower')" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+                        <!-- Populated by app.js -->
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Select from 20 Pre-Seeded Lenders:</label>
+                    <select id="select-lender-dropdown" onchange="selectPreseededUser('lender')" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+                        <!-- Populated by app.js -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- Section 2: Register New User Form -->
+            <form id="reg-section-new" onsubmit="handleNewUserRegistration(event)" class="hidden space-y-4 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">Full Name</label>
+                        <input type="text" id="reg-form-name" required placeholder="e.g. John Doe" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">Email Address</label>
+                        <input type="email" id="reg-form-email" required placeholder="john@example.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">Primary Role</label>
+                        <select id="reg-form-role" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+                            <option value="borrower">Borrower (Request Loans)</option>
+                            <option value="lender">Lender (Invest & Earn Yield)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">Starting Credit Score</label>
+                        <input type="number" id="reg-form-credit" value="720" min="550" max="850" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">Initial Wallet Deposit ($)</label>
+                        <input type="number" id="reg-form-wallet" value="5000" min="100" step="500" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs py-3 rounded-xl shadow-lg transition-all">
+                    Register User & Save to Supabase
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: FRACTIONAL FUNDING / PLEDGE MODAL -->
+    <div id="pledge-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-6 shadow-2xl space-y-5 relative">
+            <button onclick="closeModal('pledge-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div>
+                <div class="flex items-center gap-2 text-xs font-semibold text-brand-400">
+                    <i class="fa-solid fa-hand-holding-dollar"></i> Fractional Micro-Pledge
+                </div>
+                <h3 id="modal-loan-title" class="text-xl font-bold font-display text-white mt-1">Fund Borrower Listing</h3>
+                <p id="modal-loan-subtitle" class="text-xs text-slate-400">Pledge funds into this verified loan note pool.</p>
+            </div>
+
+            <!-- Loan Brief Summary Box -->
+            <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
+                <div class="flex justify-between">
+                    <span class="text-slate-400">Borrower:</span>
+                    <span id="modal-borrower-name" class="font-semibold text-white">-</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">Credit Score & Risk Grade:</span>
+                    <span id="modal-credit-grade" class="font-semibold text-emerald-400">-</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">Interest APR:</span>
+                    <span id="modal-apr" class="font-semibold text-emerald-400">-</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">Funding Progress:</span>
+                    <span id="modal-funding-progress" class="font-semibold text-white">-</span>
+                </div>
+            </div>
+
+            <!-- Pledge Slider Input -->
+            <div class="space-y-3">
+                <div class="flex justify-between items-center text-xs">
+                    <label class="font-semibold text-slate-300">Select Investment Amount ($):</label>
+                    <span class="text-slate-400">Min $25 | Max Available</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="range" id="pledge-slider" min="25" max="1000" step="25" value="100" oninput="updatePledgeCalc()" class="flex-1 accent-brand-500 bg-slate-950">
+                    <div class="relative w-28">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">$</span>
+                        <input type="number" id="pledge-amount-input" value="100" min="25" step="25" oninput="syncPledgeInput()" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-7 pr-3 py-2 text-xs text-white font-bold focus:border-brand-500">
+                    </div>
+                </div>
+
+                <!-- Yield Calculator Preview -->
+                <div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs space-y-1">
+                    <div class="flex justify-between text-slate-300">
+                        <span>Expected Monthly Return:</span>
+                        <span id="modal-est-monthly" class="font-bold text-emerald-400">$0.00 / mo</span>
+                    </div>
+                    <div class="flex justify-between text-slate-300">
+                        <span>Total Lifetime Yield (Interest):</span>
+                        <span id="modal-est-lifetime" class="font-bold text-emerald-400">$0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="confirmPledge()" class="w-full bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-semibold text-xs py-3 rounded-xl shadow-lg shadow-brand-500/25 transition-all">
+                Confirm & Lock $ <span id="confirm-pledge-btn-val">100</span> Note
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL 3: BORROWER REQUEST LOAN MODAL -->
+    <div id="borrow-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-2xl p-6 shadow-2xl space-y-5 relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModal('borrow-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div>
+                <div class="flex items-center gap-2 text-xs font-semibold text-indigo-400">
+                    <i class="fa-solid fa-hand-holding-dollar"></i> Underwritten Application
+                </div>
+                <h3 class="text-xl font-bold font-display text-white mt-1">Apply for a Peer-to-Peer Loan</h3>
+                <p class="text-xs text-slate-400">Instant AI risk grading & auto APR determination based on financial telemetry.</p>
+            </div>
+
+            <form id="borrow-form" onsubmit="handleBorrowSubmit(event)" class="space-y-4 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">Borrower Full Name</label>
+                        <input type="text" id="borrower-form-name" required value="Elena Rostova" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">Loan Purpose Category</label>
+                        <select id="borrower-form-purpose" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+                            <option value="Debt Consolidation">Debt Consolidation</option>
+                            <option value="Small Business Expansion">Small Business Expansion</option>
+                            <option value="Home Renovation">Home Renovation</option>
+                            <option value="Technology & Equipment">Technology & Equipment</option>
+                            <option value="Education & Certifications">Education & Certifications</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">Requested Amount ($)</label>
+                        <input type="number" id="borrower-form-amount" required min="1000" max="50000" step="500" value="10000" onchange="calculateBorrowQuote()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">Term Maturity</label>
+                        <select id="borrower-form-term" onchange="calculateBorrowQuote()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+                            <option value="12">12 Months (1 Year)</option>
+                            <option value="24" selected>24 Months (2 Years)</option>
+                            <option value="36">36 Months (3 Years)</option>
+                            <option value="60">60 Months (5 Years)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-300 mb-1">Credit Score Range</label>
+                        <select id="borrower-form-credit" onchange="calculateBorrowQuote()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+                            <option value="760">760+ (Grade A1 - Excellent)</option>
+                            <option value="720" selected>720 - 759 (Grade A2 - Very Good)</option>
+                            <option value="680">680 - 719 (Grade B1 - Good)</option>
+                            <option value="640">640 - 679 (Grade C1 - Average)</option>
+                            <option value="600">600 - 639 (Grade D1 - Higher Risk)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Instant Underwriting Quote Card -->
+                <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-400">Assigned Platform APR:</span>
+                        <span id="quote-apr" class="font-extrabold text-emerald-400 text-sm">10.5%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-400">Estimated Fixed Monthly Payment (EMI):</span>
+                        <span id="quote-emi" class="font-extrabold text-white text-sm">$463.80 / mo</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-semibold text-xs py-3 rounded-xl shadow-lg transition-all">
+                    Submit Listing to P2P Order Book
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: DIGITAL WALLET DEPOSIT/WITHDRAW -->
+    <div id="wallet-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4 relative">
+            <button onclick="closeModal('wallet-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-xl font-bold font-display text-white">Platform Escrow Wallet</h3>
+            <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                <p class="text-xs text-slate-400">Available Liquid Funds</p>
+                <p id="wallet-modal-balance" class="text-3xl font-extrabold text-emerald-400">$12,450.00</p>
+            </div>
+            <div class="space-y-2 text-xs">
+                <label class="font-medium text-slate-300">Amount ($)</label>
+                <input type="number" id="wallet-action-amount" value="500" min="10" step="50" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold">
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button onclick="depositFunds()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2.5 rounded-xl transition-all">
+                    Deposit Funds
+                </button>
+                <button onclick="withdrawFunds()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs py-2.5 rounded-xl transition-all">
+                    Withdraw Funds
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: AUTO-INVEST BOT CONFIG -->
+    <div id="autoinvest-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4 relative">
+            <button onclick="closeModal('autoinvest-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-2 text-brand-400 text-xs font-semibold">
+                <i class="fa-solid fa-robot"></i> Automated Order Matcher
+            </div>
+            <h3 class="text-xl font-bold font-display text-white">Configure Auto-Invest Rules</h3>
+            <button onclick="saveAutoInvest()" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs py-2.5 rounded-xl transition-all">
+                Enable Auto-Invest Engine
+            </button>
+        </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm"></div>
+
+    <!-- Helper Supabase Client -->
+    <script src="lib/supabaseClient.js"></script>
+    <!-- Application Script -->
+    <script src="app.js"></script>
+</body>
+</html>
